@@ -9,7 +9,7 @@ var gridWidth, gridHeight;
 var circuits = [];
 
 function setup() {
-  frameRate(2);
+  frameRate(10);
   createCanvas(800, 800);
 
   gridWidth = Math.floor(width / GRID_PIXELS);
@@ -39,11 +39,11 @@ function draw() {
       var cell = grid[x][y];
 
       if (cell == 'open') {
-        fill(100);
-        text(' ', gridToPixels(x), gridToPixels(y));
-      }
-      if (cell == 'used') {
-        fill(100);
+        // fill(50);
+        // text(' ', gridToPixels(x), gridToPixels(y));
+      } else {
+        fill(100, 0, 0);
+        noStroke();
         text('x', gridToPixels(x), gridToPixels(y));
       }
 
@@ -108,10 +108,16 @@ function findAdjacentCell(fromCell) {
   // var found = false;
   // var cell = 'nothing';
 
-  var nextCell = {
+
+  nextCell = {
     x: fromCell.x + randomMove.x,
     y: fromCell.y + randomMove.y,
     type: 'line'
+  }
+
+  var checkCell = grid[nextCell.x][nextCell.y];
+  if (checkCell == 'used') {
+    nextCell = null;
   }
 
   return nextCell;
@@ -124,7 +130,7 @@ function Circuit() {
   this.startPosition = findEmptyCellCoords();
   console.log('Circuit start:', this.startPosition);
   this.path.push({
-    type: 'hole',
+    type: 'starthole',
     x: this.startPosition.x,
     y: this.startPosition.y
   })
@@ -134,6 +140,9 @@ Circuit.prototype.grow = function() {
   if (this.path.length >= MAX_CIRCUIT_LENGTH) {
     finished = true;
     console.log('exceeded max length, ending this circuit!');
+    var lastCell = this.path[this.path.length-1];
+    console.log('lastCell:', lastCell);
+    lastCell.type = 'endhole';
   } else {
     var lastCell = this.path[this.path.length-1];
     // console.log('lastCell:', lastCell);
@@ -151,12 +160,15 @@ Circuit.prototype.draw = function(){
     this.grow();
   }
   this.path.forEach(function(c, index, path) {
-    if (c.type == 'hole') {
+    // always update grid cells to be "used"
+    grid[c.x][c.y] = 'used';
+
+    if (c.type == 'starthole' || c.type == 'endhole') {
       stroke(255);
       noFill();
       ellipse(gridToPixels(c.x), gridToPixels(c.y), HOLE_RADIUS, HOLE_RADIUS);
     }
-    if (c.type == 'line') {
+    if (c.type == 'line' || c.type == 'endhole') {
       var prevC = path[index - 1];
       stroke(255);
       noFill();
