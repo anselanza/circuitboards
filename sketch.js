@@ -7,6 +7,7 @@ var INIT_NUM_CIRCUITS = 0;
 var MAX_CIRCUITS = SIZE * 5 / GRID_PIXELS;
 var GROUPS_MAX = 8;
 var PROBABILITY_NEW_CIRCUITS = 100;
+var PROBABILITY_TOGGLE_GLOW = 20;
 var HOLE_RADIUS = GRID_PIXELS / 1.5;
 var MAX_CIRCUIT_LENGTH = 50;
 var MAX_AGE = 1;
@@ -59,11 +60,15 @@ function draw() {
     drawGrid();
   }
 
-  var pickToggle = Math.round(random(0, circuits.length-1));
-  // console.log(circuits[pickToggle]);
-  if (circuits[pickToggle]) {
-    circuits[pickToggle].glow = !circuits[pickToggle].glow;
-  };
+  var shouldWeToggle = random(0, 100);
+  if (shouldWeToggle < PROBABILITY_TOGGLE_GLOW) {
+    var pickToggle = Math.round(random(0, circuits.length-1));
+    // console.log(circuits[pickToggle]);
+    if (circuits[pickToggle]) {
+      circuits[pickToggle].glow = !circuits[pickToggle].glow;
+    };
+    
+  }
 
   circuits.forEach(function(circuit) {
     circuit.draw();
