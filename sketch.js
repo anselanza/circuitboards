@@ -1,17 +1,20 @@
 var DEBUG = false;
 
-var GRID_PIXELS = 20;
+var GRID_PIXELS = 10;
 var INIT_NUM_CIRCUITS = 50;
 var PROBABILITY_NEW_CIRCUITS = 90;
 var HOLE_RADIUS = GRID_PIXELS / 1.5;
 var MAX_CIRCUIT_LENGTH = 50;
 var MAX_AGE = 10;
 
+var spawn = true;
+
 var biasDirection = {
   x: 1,
   y: 1,
-  strength: 75
+  strength: 50
 };
+var PREVENT_BACKTRACKING = true;
 
 var grid = [];
 var gridWidth, gridHeight;
@@ -56,7 +59,7 @@ function draw() {
   });
 
   var dice = random(0, 100);
-  if (dice > PROBABILITY_NEW_CIRCUITS) {
+  if (dice > PROBABILITY_NEW_CIRCUITS && spawn) {
     if (DEBUG) { console.log('spawn new circuit randomly!'); }
     circuits.push(new Circuit());
   }
@@ -82,7 +85,8 @@ function drawGrid() {
 }
 
 function gridToPixels(input) {
-  return input * GRID_PIXELS;
+  // return map(input * GRID_PIXELS, 0, width, -100, width + 100);
+  return (input * GRID_PIXELS);
 }
 
 
@@ -132,10 +136,31 @@ function findAdjacentCell(fromCell) {
       randomMove = { x: biasDirection.x, y: biasDirection.y };
     } else {
       // pick a truly random direction
-      while (!randomMove || (randomMove.x == 0 && randomMove.y == 0) ) {
-        randomMove = { x: Math.round(random(-1, 1)), y: Math.round(random(-1, 1)) };
-        if (DEBUG) { console.log('randomMove:', randomMove); }
+      var randomDirection = Math.round(random(-1, 1));
+
+      var whichAxis = random(0,1);
+      if (whichAxis > 0.5) {
+          randomMove = { x: biasDirection.x, y: randomDirection };
+      } else {
+        randomMove = { y: biasDirection.y, x: randomDirection };
       }
+
+      if (PREVENT_BACKTRACKING) {
+        // Prevent allow circuits to backtrack...
+        if (biasDirection.x > 0) {
+          randomMove.x = constrain(randomMove.x, 0, 1);
+        }
+        if (biasDirection.y > 0) {
+          randomMove.y = constrain(randomMove.y, 0, 1);
+        }
+        if (biasDirection.x < 0) {
+          randomMove.x = constrain(randomMove.x, -1, 0);
+        }
+        if (biasDirection.y < 0) {
+          randomMove.y = constrain(randomMove.y, -1, 0);
+        }
+      }
+
     }
   }
   if (DEBUG) { console.log('final randomMove:', randomMove); }
@@ -235,6 +260,5 @@ Circuit.prototype.draw = function(){
 }
 
 function mouseClicked() {
-  if (DEBUG) { console.log('mouse clicked!'); }
-  circuits.push(new Circuit());
+  spawn = !spawn;
 }
