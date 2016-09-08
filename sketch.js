@@ -1,8 +1,10 @@
 var DEBUG = false;
 
+var SIZE = 900;
+
 var GRID_PIXELS = 15;
 var INIT_NUM_CIRCUITS = 0;
-var MAX_CIRCUITS = 200;
+var MAX_CIRCUITS = SIZE * 5 / GRID_PIXELS;
 var GROUPS_MAX = 8;
 var PROBABILITY_NEW_CIRCUITS = 100;
 var HOLE_RADIUS = GRID_PIXELS / 1.5;
@@ -16,9 +18,9 @@ var spawn = true;
 var biasDirection = {
   x: 1,
   y: 1,
-  strength: 80
+  strength: 80,
+  preventBacktracking: false
 };
-var PREVENT_BACKTRACKING = false;
 
 var grid = [];
 var gridWidth, gridHeight;
@@ -27,7 +29,7 @@ var circuits = [];
 
 function setup() {
   frameRate(25);
-  createCanvas(800, 800);
+  createCanvas(SIZE, SIZE);
 
   gridWidth = Math.floor(width / GRID_PIXELS);
   gridHeight = Math.floor(height / GRID_PIXELS);
@@ -164,7 +166,7 @@ function findAdjacentCell(fromCell) {
         randomMove = { y: biasDirection.y, x: randomDirection };
       }
 
-      if (PREVENT_BACKTRACKING) {
+      if (biasDirection.preventBacktracking) {
         // Prevent allow circuits to backtrack...
         if (biasDirection.x > 0) {
           randomMove.x = constrain(randomMove.x, 0, 1);
@@ -216,9 +218,6 @@ function Circuit(startX, startY) {
       y: startY
     };
     if (DEBUG) { console.log('req start position:', this.startPosition); }
-    // if (grid[this.startPosition.x][this.startPosition.y] != 'open') {
-    //   this.startPosition = null;
-    // }
   } else {
     this.startPosition = findEmptyCellCoords();
   }
@@ -229,7 +228,8 @@ function Circuit(startX, startY) {
     this.path.push({
       type: 'starthole',
       x: this.startPosition.x,
-      y: this.startPosition.y
+      y: this.startPosition.y,
+      age: 0
     })
   }
 }
@@ -270,18 +270,20 @@ Circuit.prototype.draw = function(){
   this.path.forEach(function(c, index, path) {
     // always update grid cells to be "used"
     grid[c.x][c.y] = 'used';
+    c.age+= 10;
+    if (c.age > 255) { c.age = 255 }
 
     if (c.type == 'line' || c.type == 'endhole') {
       var prevC = path[index - 1];
       if (prevC) {
-        stroke(255);
+        stroke(c.age);
         noFill();
         line(gridToPixels(prevC.x), gridToPixels(prevC.y), gridToPixels(c.x), gridToPixels(c.y));
       }
     }
 
     if (c.type == 'starthole' || c.type == 'endhole') {
-      stroke(255);
+      stroke(c.age);
       noFill();
       // fill(255);
       ellipse(gridToPixels(c.x), gridToPixels(c.y), HOLE_RADIUS, HOLE_RADIUS);
