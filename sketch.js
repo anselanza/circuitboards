@@ -1,20 +1,24 @@
 var DEBUG = false;
 
-var GRID_PIXELS = 10;
-var INIT_NUM_CIRCUITS = 50;
-var PROBABILITY_NEW_CIRCUITS = 90;
+var GRID_PIXELS = 15;
+var INIT_NUM_CIRCUITS = 0;
+var MAX_CIRCUITS = 200;
+var GROUPS_MAX = 8;
+var PROBABILITY_NEW_CIRCUITS = 100;
 var HOLE_RADIUS = GRID_PIXELS / 1.5;
 var MAX_CIRCUIT_LENGTH = 50;
-var MAX_AGE = 10;
+var MAX_AGE = 1;
+
+var startY = 0;
 
 var spawn = true;
 
 var biasDirection = {
   x: 1,
   y: 1,
-  strength: 50
+  strength: 80
 };
-var PREVENT_BACKTRACKING = true;
+var PREVENT_BACKTRACKING = false;
 
 var grid = [];
 var gridWidth, gridHeight;
@@ -58,10 +62,20 @@ function draw() {
     circuit.draw();
   });
 
+  if (circuits.length > MAX_CIRCUITS) {
+    spawn = false;
+  }
+
   var dice = random(0, 100);
-  if (dice > PROBABILITY_NEW_CIRCUITS && spawn) {
-    if (DEBUG) { console.log('spawn new circuit randomly!'); }
-    circuits.push(new Circuit());
+  if (dice < PROBABILITY_NEW_CIRCUITS && spawn) {
+    if (DEBUG) { console.log('spawn new circuit group randomly!'); }
+    var pickStart = findEmptyCellCoords();
+    if (pickStart) {
+      var groupSize = random(0, GROUPS_MAX);
+      for (g = 0; g < groupSize; g++) {
+        circuits.push(new Circuit(pickStart.x, pickStart.y+g));
+      }
+    }
   }
 
 }
@@ -95,6 +109,11 @@ function randomCellCoords() {
     x: Math.floor(random(0, gridWidth)),
     y: Math.floor(random(0, gridHeight))
   };
+  // var r = {
+  //   x: 0
+  // }
+  // r.y = startY++;
+  // return r;
 }
 
 function findEmptyCellCoords() {
@@ -187,11 +206,22 @@ function findAdjacentCell(fromCell) {
   Circuit Class
   ==============================================================================
 */
-function Circuit() {
+function Circuit(startX, startY) {
   this.path = [];
   this.finished = false;
   this.age = 0;
-  this.startPosition = findEmptyCellCoords();
+  if (startX && startY) {
+    this.startPosition = {
+      x: startX,
+      y: startY
+    };
+    if (DEBUG) { console.log('req start position:', this.startPosition); }
+    // if (grid[this.startPosition.x][this.startPosition.y] != 'open') {
+    //   this.startPosition = null;
+    // }
+  } else {
+    this.startPosition = findEmptyCellCoords();
+  }
   if (this.startPosition == null) {
     if (DEBUG) { console.log('Circuit abort!'); }
     this.finished = true;
@@ -252,8 +282,8 @@ Circuit.prototype.draw = function(){
 
     if (c.type == 'starthole' || c.type == 'endhole') {
       stroke(255);
-      // noFill();
-      fill(255);
+      noFill();
+      // fill(255);
       ellipse(gridToPixels(c.x), gridToPixels(c.y), HOLE_RADIUS, HOLE_RADIUS);
     }
   });
