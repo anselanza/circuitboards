@@ -59,6 +59,11 @@ function draw() {
     drawGrid();
   }
 
+  var pickToggle = Math.round(random(0, circuits.length-1));
+  // console.log(circuits[pickToggle]);
+  if (circuits[pickToggle]) {
+    circuits[pickToggle].glow = !circuits[pickToggle].glow;
+  };
 
   circuits.forEach(function(circuit) {
     circuit.draw();
@@ -211,6 +216,7 @@ function findAdjacentCell(fromCell) {
 function Circuit(startX, startY) {
   this.path = [];
   this.finished = false;
+  this.glow = false;
   this.age = 0;
   if (startX && startY) {
     this.startPosition = {
@@ -263,6 +269,7 @@ Circuit.prototype.grow = function() {
 }
 
 Circuit.prototype.draw = function(){
+  var pleaseGlow = this.glow;
   if (!this.finished) {
     if (DEBUG) { console.log('grow!'); }
     this.grow();
@@ -272,19 +279,24 @@ Circuit.prototype.draw = function(){
     grid[c.x][c.y] = 'used';
     c.age+= 10;
     if (c.age > 255) { c.age = 255 }
+    stroke(c.age / 3);
+    if (pleaseGlow && c.age == 255) {
+      stroke(c.age);
+    }
 
     if (c.type == 'line' || c.type == 'endhole') {
       var prevC = path[index - 1];
       if (prevC) {
-        stroke(c.age);
         noFill();
         line(gridToPixels(prevC.x), gridToPixels(prevC.y), gridToPixels(c.x), gridToPixels(c.y));
       }
     }
 
     if (c.type == 'starthole' || c.type == 'endhole') {
-      stroke(c.age);
       noFill();
+      if (pleaseGlow && c.age == 255) {
+        fill(255);
+      }
       // fill(255);
       ellipse(gridToPixels(c.x), gridToPixels(c.y), HOLE_RADIUS, HOLE_RADIUS);
     }
