@@ -67,7 +67,7 @@ function draw() {
     if (circuits[pickToggle]) {
       circuits[pickToggle].glow = !circuits[pickToggle].glow;
     };
-    
+
   }
 
   circuits.forEach(function(circuit) {
